@@ -29,6 +29,7 @@ message BlockRequest {
 	Direction direction = 5;
 	// Maximum number of blocks to return. An implementation defined maximum is used when unspecified.
 	uint32 max_blocks = 6; // optional
+	bool support_multiple_justifications = 7; // optional
 }
 
 // Response to `BlockRequest`
@@ -56,5 +57,7 @@ message BlockData {
 	// doesn't make in possible to differentiate between a lack of justification and an empty
 	// justification.
 	bool is_empty_justification = 7; // optional, false if absent
+	// WIP(JON): even for empty Justifications this should be nonzero as it contains the ID.
+	bytes justifications = 8; // optional
 }
 

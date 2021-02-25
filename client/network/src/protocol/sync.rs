@@ -823,8 +823,10 @@ impl<B: BlockT> ChainSync<B> {
 								.drain(self.best_queued_number + One::one())
 								.into_iter()
 								.map(|block_data| {
-									let justifications =
-										legacy_justification_mapping(block_data.block.justification);
+									// WIP(JON)
+									let justifications = block_data.block.justifications.or(
+										legacy_justification_mapping(block_data.block.justification)
+									);
 									IncomingBlock {
 										hash: block_data.block.hash,
 										header: block_data.block.header,
@@ -844,11 +846,15 @@ impl<B: BlockT> ChainSync<B> {
 							}
 							validate_blocks::<B>(&blocks, who, Some(request))?;
 							blocks.into_iter().map(|b| {
+								// WIP(JON)
+								let justifications = b.justifications.or(
+									legacy_justification_mapping(b.justification)
+								);
 								IncomingBlock {
 									hash: b.hash,
 									header: b.header,
 									body: b.body,
-									justifications: legacy_justification_mapping(b.justification),
+									justifications,
 									origin: Some(who.clone()),
 									allow_missing_state: true,
 									import_existing: false,
@@ -953,11 +959,15 @@ impl<B: BlockT> ChainSync<B> {
 					// When request.is_none() this is a block announcement. Just accept blocks.
 					validate_blocks::<B>(&blocks, who, None)?;
 					blocks.into_iter().map(|b| {
+						// WIP(JON)
+						let justifications = b.justifications.or(
+							legacy_justification_mapping(b.justification)
+						);
 						IncomingBlock {
 							hash: b.hash,
 							header: b.header,
 							body: b.body,
-							justifications: legacy_justification_mapping(b.justification),
+							justifications,
 							origin: Some(who.clone()),
 							allow_missing_state: true,
 							import_existing: false,
@@ -1028,7 +1038,8 @@ impl<B: BlockT> ChainSync<B> {
 					return Err(BadPeer(who, rep::BAD_JUSTIFICATION));
 				}
 
-				block.justification
+				// WIP(JON)
+				block.justifications.or(legacy_justification_mapping(block.justification))
 			} else {
 				// we might have asked the peer for a justification on a block that we assumed it
 				// had but didn't (regardless of whether it had a justification for it or not).
@@ -1043,7 +1054,7 @@ impl<B: BlockT> ChainSync<B> {
 
 			if let Some((peer, hash, number, j)) = self
 				.extra_justifications
-				.on_response(who, legacy_justification_mapping(justification))
+				.on_response(who, justification)
 			{
 				return Ok(OnBlockJustification::Import { peer, hash, number, justifications: j })
 			}
@@ -2105,6 +2116,7 @@ mod test {
 					receipt: None,
 					message_queue: None,
 					justification: None,
+					justifications: None,
 				}
 			).collect(),
 		}
